@@ -1,18 +1,19 @@
 <?php
-
-require_once('config.php');
+require_once(dirname(__FILE__) . '/../config/config.php');
+require_once(dirname(__FILE__) . '/../lib/twitter/Twitter.php');
 require_once('functions.php');
-require_once('Twitter.php');
 
 $twitter = new Twitter();
 $twitter->setCredentials($config['username'], $config['password']);
 
-$next_tweet = file_get_contents(dirname(__FILE__) . '/nextCoffeeTweet.txt');
-$since_id   = file_get_contents(dirname(__FILE__) . '/lastMention.txt');
+$next_tweet = file_get_contents(dirname(__FILE__) . '/../data/nextCoffeeTweet.txt');
+$since_id   = file_get_contents(dirname(__FILE__) . '/../data/lastMention.txt');
 $mentions   = $twitter->getMentions($since_id);
+
 if (!is_array($mentions)) {
 	die();
 }
+
 foreach ($mentions as $mention) {
 	if ((string) $mention->id > $since_id) {
 		$since_id = (string) $mention->id;
@@ -47,7 +48,15 @@ foreach ($mentions as $mention) {
 	} else {
 		$message = 'lulz lulz lulz!';
 	}
-	$tweet = '@' . $mention->user->screen_name . ' ' . $message;
-	$twitter->update($tweet, 'xml', array('in_reply_to_status_id' => $mention->id, 'lat' => $config['lat'], 'long' => $config['long']));
+	$twitter->update(
+		'@' . $mention->user->screen_name . ' ' . $message,
+		'xml',
+		array(
+			'in_reply_to_status_id' => $mention->id,
+			'lat'                   => $config['lat'],
+			'long'                  => $config['long'],
+		)
+	);
 }
-file_put_contents(dirname(__FILE__) . '/lastMention.txt', $since_id);
+
+file_put_contents(dirname(__FILE__) . '/../data/lastMention.txt', $since_id);
